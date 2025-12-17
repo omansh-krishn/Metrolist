@@ -813,17 +813,31 @@ class MainActivity : ComponentActivity() {
                                             pureBlack = pureBlack
                                         )
                                         
-                                        // ✅ 3️⃣ NavBar Composable (نسخة جاهزة)
+                                        // ✅ 3️⃣ NavBar Composable (نسخة جاهزة مع المنطق الأصلي)
                                         NavigationBar(
                                             modifier = Modifier
                                                 .align(Alignment.BottomCenter)
-                                                .height(bottomInset + animatedNavBarHeight)
+                                                .height(bottomInset + getNavPadding())
                                                 .offset {
-                                                    IntOffset(
-                                                        x = 0,
-                                                        y = (bottomInset + (NavigationBarHeight - animatedNavBarHeight))
-                                                            .roundToPx()
-                                                    )
+                                                    if (navigationBarHeight == 0.dp) {
+                                                        IntOffset(
+                                                            x = 0,
+                                                            y = (bottomInset + NavigationBarHeight).roundToPx(),
+                                                        )
+                                                    } else {
+                                                        val slideOffset =
+                                                            (bottomInset + NavigationBarHeight) *
+                                                                    playerBottomSheetState.progress.coerceIn(
+                                                                        0f,
+                                                                        1f,
+                                                                    )
+                                                        val hideOffset =
+                                                            (bottomInset + NavigationBarHeight) * (1 - navigationBarHeight / NavigationBarHeight)
+                                                        IntOffset(
+                                                            x = 0,
+                                                            y = (slideOffset + hideOffset).roundToPx(),
+                                                        )
+                                                    }
                                                 },
                                             containerColor = if (pureBlack)
                                                 Color.Black
@@ -862,9 +876,10 @@ class MainActivity : ComponentActivity() {
                                                     },
                                                     onClick = {
                                                         if (isSelected) {
-                                                            navController.currentBackStackEntry
-                                                                ?.savedStateHandle
-                                                                ?.set("scrollToTop", true)
+                                                            navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
+                                                            coroutineScope.launch {
+                                                                searchBarScrollBehavior.state.resetHeightOffset()
+                                                            }
                                                         } else {
                                                             navController.navigate(screen.route) {
                                                                 popUpTo(navController.graph.startDestinationId) {
@@ -940,16 +955,17 @@ class MainActivity : ComponentActivity() {
                                                 },
                                                 onClick = {
                                                     if (isSelected) {
-                                                        navController.currentBackStackEntry
-                                                            ?.savedStateHandle
-                                                            ?.set("scrollToTop", true)
+                                                        navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
+                                                        coroutineScope.launch {
+                                                            searchBarScrollBehavior.state.resetHeightOffset()
+                                                        }
                                                     } else {
                                                         navController.navigate(screen.route) {
                                                             popUpTo(navController.graph.startDestinationId) {
-                                                                saveState = true
+                                                                inclusive = false
                                                             }
                                                             launchSingleTop = true
-                                                            restoreState = true
+                                                            restoreState = false
                                                         }
                                                     }
                                                 }
