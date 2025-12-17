@@ -251,10 +251,47 @@ fun OnlineSearchResult(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 8.dp, bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { 
+                            if (isSearchBarExpanded) {
+                                isSearchBarExpanded = false
+                                focusManager.clearFocus()
+                            } else {
+                                navController.navigateUp()
+                            }
+                        },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.arrow_back),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     if (isSearchBarExpanded) {
                         OutlinedTextField(
                             value = query,
@@ -275,11 +312,15 @@ fun OnlineSearchResult(
                             trailingIcon = {
                                 Row {
                                     if (query.text.isNotEmpty()) {
-                                        IconButton(onClick = { query = TextFieldValue("") }) {
+                                        IconButton(
+                                            onClick = { query = TextFieldValue("") },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.close),
                                                 contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurface
+                                                tint = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         }
                                     }
@@ -287,7 +328,7 @@ fun OnlineSearchResult(
                             },
                             singleLine = true,
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .weight(1f)
                                 .focusRequester(focusRequester),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -306,49 +347,31 @@ fun OnlineSearchResult(
                     } else {
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .weight(1f)
+                                .height(48.dp)
                                 .combinedClickable(
                                     onClick = { 
                                         isSearchBarExpanded = true
                                     }
                                 )
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = decodedQuery.ifEmpty { stringResource(R.string.search_yt_music) },
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { 
-                        if (isSearchBarExpanded) {
-                            isSearchBarExpanded = false
-                            focusManager.clearFocus()
-                        } else {
-                            navController.navigateUp()
-                        }
-                    }) {
-                        Icon(
-                            painter = painterResource(R.drawable.arrow_back),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer,
-                    scrolledContainerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
-                )
-            )
-        },
-        containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier.padding(paddingValues)
-        ) {
+                }
+            }
+            
+            // ChipsRow
             ChipsRow(
                 chips = listOf(
                     null to stringResource(R.string.filter_all),
@@ -368,75 +391,73 @@ fun OnlineSearchResult(
                         lazyListState.animateScrollToItem(0)
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Box(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
+
+            LazyColumn(
+                state = lazyListState,
+                contentPadding = LocalPlayerAwareWindowInsets.current
+                    .add(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+                    .asPaddingValues(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
             ) {
-                LazyColumn(
-                    state = lazyListState,
-                    contentPadding = LocalPlayerAwareWindowInsets.current
-                        .add(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                        .asPaddingValues(),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    if (searchFilter == null) {
-                        searchSummary?.summaries?.forEach { summary ->
-                            item {
-                                NavigationTitle(summary.title)
-                            }
-
-                            items(
-                                items = summary.items,
-                                key = { "${summary.title}/${it.id}/${summary.items.indexOf(it)}" },
-                                itemContent = ytItemContent,
-                            )
+                if (searchFilter == null) {
+                    searchSummary?.summaries?.forEach { summary ->
+                        item {
+                            NavigationTitle(summary.title)
                         }
 
-                        if (searchSummary?.summaries?.isEmpty() == true) {
-                            item {
-                                EmptyPlaceholder(
-                                    icon = R.drawable.search,
-                                    text = stringResource(R.string.no_results_found),
-                                )
-                            }
-                        }
-                    } else {
                         items(
-                            items = itemsPage?.items.orEmpty().distinctBy { it.id },
-                            key = { "filtered_${it.id}" },
+                            items = summary.items,
+                            key = { "${summary.title}/${it.id}/${summary.items.indexOf(it)}" },
                             itemContent = ytItemContent,
                         )
+                    }
 
-                        if (itemsPage?.continuation != null) {
-                            item(key = "loading") {
-                                ShimmerHost {
-                                    repeat(3) {
-                                        ListItemPlaceHolder()
-                                    }
-                                }
-                            }
+                    if (searchSummary?.summaries?.isEmpty() == true) {
+                        item {
+                            EmptyPlaceholder(
+                                icon = R.drawable.search,
+                                text = stringResource(R.string.no_results_found),
+                            )
                         }
+                    }
+                } else {
+                    items(
+                        items = itemsPage?.items.orEmpty().distinctBy { it.id },
+                        key = { "filtered_${it.id}" },
+                        itemContent = ytItemContent,
+                    )
 
-                        if (itemsPage?.items?.isEmpty() == true) {
-                            item {
-                                EmptyPlaceholder(
-                                    icon = R.drawable.search,
-                                    text = stringResource(R.string.no_results_found),
-                                )
+                    if (itemsPage?.continuation != null) {
+                        item(key = "loading") {
+                            ShimmerHost {
+                                repeat(3) {
+                                    ListItemPlaceHolder()
+                                }
                             }
                         }
                     }
 
-                    if (searchFilter == null && searchSummary == null || searchFilter != null && itemsPage == null) {
+                    if (itemsPage?.items?.isEmpty() == true) {
                         item {
-                            ShimmerHost {
-                                repeat(8) {
-                                    ListItemPlaceHolder()
-                                }
+                            EmptyPlaceholder(
+                                icon = R.drawable.search,
+                                text = stringResource(R.string.no_results_found),
+                            )
+                        }
+                    }
+                }
+
+                if (searchFilter == null && searchSummary == null || searchFilter != null && itemsPage == null) {
+                    item {
+                        ShimmerHost {
+                            repeat(8) {
+                                ListItemPlaceHolder()
                             }
                         }
                     }
