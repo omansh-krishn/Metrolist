@@ -338,7 +338,8 @@ fun OnlineSearchResult(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+                    containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer,
+                    scrolledContainerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
                 )
             )
         },
@@ -369,65 +370,72 @@ fun OnlineSearchResult(
                 modifier = Modifier.fillMaxWidth()
             )
             
-            LazyColumn(
-                state = lazyListState,
-                contentPadding = LocalPlayerAwareWindowInsets.current
-                    .add(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                    .asPaddingValues()
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
             ) {
-        if (searchFilter == null) {
-            searchSummary?.summaries?.forEach { summary ->
-                item {
-                    NavigationTitle(summary.title)
-                }
+                LazyColumn(
+                    state = lazyListState,
+                    contentPadding = LocalPlayerAwareWindowInsets.current
+                        .add(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+                        .asPaddingValues(),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    if (searchFilter == null) {
+                        searchSummary?.summaries?.forEach { summary ->
+                            item {
+                                NavigationTitle(summary.title)
+                            }
 
-                items(
-                    items = summary.items,
-                    key = { "${summary.title}/${it.id}/${summary.items.indexOf(it)}" },
-                    itemContent = ytItemContent,
-                )
-            }
+                            items(
+                                items = summary.items,
+                                key = { "${summary.title}/${it.id}/${summary.items.indexOf(it)}" },
+                                itemContent = ytItemContent,
+                            )
+                        }
 
-            if (searchSummary?.summaries?.isEmpty() == true) {
-                item {
-                    EmptyPlaceholder(
-                        icon = R.drawable.search,
-                        text = stringResource(R.string.no_results_found),
-                    )
-                }
-            }
-        } else {
-            items(
-                items = itemsPage?.items.orEmpty().distinctBy { it.id },
-                key = { "filtered_${it.id}" },
-                itemContent = ytItemContent,
-            )
+                        if (searchSummary?.summaries?.isEmpty() == true) {
+                            item {
+                                EmptyPlaceholder(
+                                    icon = R.drawable.search,
+                                    text = stringResource(R.string.no_results_found),
+                                )
+                            }
+                        }
+                    } else {
+                        items(
+                            items = itemsPage?.items.orEmpty().distinctBy { it.id },
+                            key = { "filtered_${it.id}" },
+                            itemContent = ytItemContent,
+                        )
 
-            if (itemsPage?.continuation != null) {
-                item(key = "loading") {
-                    ShimmerHost {
-                        repeat(3) {
-                            ListItemPlaceHolder()
+                        if (itemsPage?.continuation != null) {
+                            item(key = "loading") {
+                                ShimmerHost {
+                                    repeat(3) {
+                                        ListItemPlaceHolder()
+                                    }
+                                }
+                            }
+                        }
+
+                        if (itemsPage?.items?.isEmpty() == true) {
+                            item {
+                                EmptyPlaceholder(
+                                    icon = R.drawable.search,
+                                    text = stringResource(R.string.no_results_found),
+                                )
+                            }
                         }
                     }
-                }
-            }
 
-            if (itemsPage?.items?.isEmpty() == true) {
-                item {
-                    EmptyPlaceholder(
-                        icon = R.drawable.search,
-                        text = stringResource(R.string.no_results_found),
-                    )
-                }
-            }
-        }
-
-                if (searchFilter == null && searchSummary == null || searchFilter != null && itemsPage == null) {
-                    item {
-                        ShimmerHost {
-                            repeat(8) {
-                                ListItemPlaceHolder()
+                    if (searchFilter == null && searchSummary == null || searchFilter != null && itemsPage == null) {
+                        item {
+                            ShimmerHost {
+                                repeat(8) {
+                                    ListItemPlaceHolder()
+                                }
                             }
                         }
                     }
