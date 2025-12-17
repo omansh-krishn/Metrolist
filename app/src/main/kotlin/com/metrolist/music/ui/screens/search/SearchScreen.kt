@@ -66,6 +66,23 @@ fun SearchScreen(
         }
     }
 
+    val onSearchFromSuggestion: (String) -> Unit = remember {
+        { searchQuery ->
+            if (searchQuery.isNotEmpty()) {
+                focusManager.clearFocus()
+                navController.navigate("search/${URLEncoder.encode(searchQuery, "UTF-8")}")
+
+                if (!pauseSearchHistory) {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        database.query {
+                            insert(SearchHistory(query = searchQuery))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -174,8 +191,8 @@ fun SearchScreen(
                         query = query.text,
                         onQueryChange = { query = it },
                         navController = navController,
-                        onSearch = onSearch,
-                        onDismiss = { navController.navigateUp() },
+                        onSearch = onSearchFromSuggestion,
+                        onDismiss = { /* Don't dismiss when searching from suggestions */ },
                         pureBlack = pureBlack
                     )
                 }
