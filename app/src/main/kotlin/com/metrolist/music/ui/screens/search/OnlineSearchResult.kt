@@ -100,6 +100,7 @@ import java.net.URLEncoder
 fun OnlineSearchResult(
     navController: NavController,
     viewModel: OnlineSearchViewModel = hiltViewModel(),
+    pureBlack: Boolean = false
 ) {
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -256,8 +257,18 @@ fun OnlineSearchResult(
                         OutlinedTextField(
                             value = query,
                             onValueChange = { query = it },
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
                             placeholder = {
-                                Text(text = stringResource(R.string.search_yt_music))
+                                Text(
+                                    text = stringResource(R.string.search_yt_music),
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontSize = 16.sp,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                )
                             },
                             trailingIcon = {
                                 Row {
@@ -265,7 +276,8 @@ fun OnlineSearchResult(
                                         IconButton(onClick = { query = TextFieldValue("") }) {
                                             Icon(
                                                 painter = painterResource(R.drawable.close),
-                                                contentDescription = null
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurface
                                             )
                                         }
                                     }
@@ -276,10 +288,13 @@ fun OnlineSearchResult(
                                 .fillMaxWidth()
                                 .focusRequester(focusRequester),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
                                 focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent
+                                unfocusedBorderColor = Color.Transparent,
+                                cursorColor = MaterialTheme.colorScheme.primary
                             ),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             keyboardActions = KeyboardActions(
@@ -299,6 +314,7 @@ fun OnlineSearchResult(
                             Text(
                                 text = decodedQuery.ifEmpty { stringResource(R.string.search_yt_music) },
                                 style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -315,20 +331,23 @@ fun OnlineSearchResult(
                     }) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
-                            contentDescription = null
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
                 )
             )
-        }
+        },
+        containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column {
+        Column(
+            modifier = Modifier.padding(paddingValues)
+        ) {
             ChipsRow(
-                chips =
-                listOf(
+                chips = listOf(
                     null to stringResource(R.string.filter_all),
                     FILTER_SONG to stringResource(R.string.filter_songs),
                     FILTER_VIDEO to stringResource(R.string.filter_videos),
@@ -346,17 +365,14 @@ fun OnlineSearchResult(
                         lazyListState.animateScrollToItem(0)
                     }
                 },
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.surface)
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             )
             
             LazyColumn(
                 state = lazyListState,
                 contentPadding = LocalPlayerAwareWindowInsets.current
                     .add(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                    .asPaddingValues(),
-                modifier = Modifier.padding(paddingValues)
+                    .asPaddingValues()
             ) {
         if (searchFilter == null) {
             searchSummary?.summaries?.forEach { summary ->
