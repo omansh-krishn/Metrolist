@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.height
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
@@ -30,6 +32,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -254,102 +258,106 @@ fun OnlineSearchResult(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    if (isSearchBarExpanded) {
-                        OutlinedTextField(
-                            value = query,
-                            onValueChange = { query = it },
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            ),
-                            placeholder = {
-                                Text(
-                                    text = stringResource(R.string.search_yt_music),
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontSize = 16.sp,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                    )
-                                )
-                            },
-                            trailingIcon = {
-                                Row {
-                                    if (query.text.isNotEmpty()) {
-                                        IconButton(onClick = { query = TextFieldValue("") }) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.close),
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        }
-                                    }
-                                }
-                            },
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequester),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                cursorColor = MaterialTheme.colorScheme.primary
-                            ),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(
-                                onSearch = { onSearch(query.text) }
-                            )
-                        )
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = { 
-                                        isSearchBarExpanded = true
-                                    }
-                                )
-                        ) {
-                            Text(
-                                text = decodedQuery.ifEmpty { stringResource(R.string.search_yt_music) },
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { 
-                        if (isSearchBarExpanded) {
-                            isSearchBarExpanded = false
-                            focusManager.clearFocus()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
+    ) {
+        // Google-style SearchBar
+        SearchBar(
+            inputField = {
+                SearchBarDefaults.InputField(
+                    query = query.text,
+                    onQueryChange = { newQuery ->
+                        query = TextFieldValue(newQuery, TextRange(newQuery.length))
+                    },
+                    onSearch = { searchQuery ->
+                        onSearch(searchQuery)
+                    },
+                    expanded = isSearchBarExpanded,
+                    onExpandedChange = { expanded ->
+                        isSearchBarExpanded = expanded
+                        if (expanded) {
+                            coroutineScope.launch {
+                                focusRequester.requestFocus()
+                            }
                         } else {
-                            navController.navigateUp()
+                            focusManager.clearFocus()
                         }
-                    }) {
-                        Icon(
-                            painter = painterResource(R.drawable.arrow_back),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface
+                    },
+                    placeholder = {
+                        Text(
+                            text = stringResource(R.string.search_yt_music),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+                    },
+                    leadingIcon = {
+                        IconButton(
+                            onClick = {
+                                if (isSearchBarExpanded) {
+                                    isSearchBarExpanded = false
+                                    focusManager.clearFocus()
+                                } else {
+                                    navController.navigateUp()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(
+                                    if (isSearchBarExpanded) R.drawable.arrow_back else R.drawable.search
+                                ),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    trailingIcon = {
+                        if (query.text.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    query = TextFieldValue("")
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.close),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.focusRequester(focusRequester)
                 )
-            )
-        },
-        containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+            },
+            expanded = isSearchBarExpanded,
+            onExpandedChange = { expanded ->
+                isSearchBarExpanded = expanded
+                if (!expanded) {
+                    focusManager.clearFocus()
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = SearchBarDefaults.colors(
+                containerColor = if (pureBlack) 
+                    MaterialTheme.colorScheme.surface 
+                else 
+                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                dividerColor = Color.Transparent
+            ),
+            tonalElevation = 6.dp,
+            shadowElevation = 0.dp
+        ) {
+            // Empty content for search suggestions (can be added later)
+        }
+
+        // Content below search bar
         Column(
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.fillMaxWidth()
         ) {
             ChipsRow(
                 chips = listOf(
@@ -374,7 +382,10 @@ fun OnlineSearchResult(
             )
 
             LazyColumn(
-                state = lazyListState
+                state = lazyListState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             ) {
                 if (searchFilter == null) {
                     searchSummary?.summaries?.forEach { summary ->
