@@ -486,8 +486,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val shouldShowNavigationBar = remember(navBackStackEntry) {
-                        navBackStackEntry?.destination?.route == null ||
-                                navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }
+                    val currentRoute = navBackStackEntry?.destination?.route
+                        currentRoute == null ||
+                            navigationItems.fastAny { it.route == currentRoute } ||
+                            currentRoute.startsWith("search/")
                     }
 
                     val isLandscape = remember(configuration) {
