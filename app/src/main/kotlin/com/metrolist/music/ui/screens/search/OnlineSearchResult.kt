@@ -58,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotation
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -264,7 +265,7 @@ fun OnlineSearchResult(
             .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
     ) {
-        // Google-style SearchBar
+        // Google-style SearchBar with Material 3 design
         SearchBar(
             inputField = {
                 SearchBarDefaults.InputField(
@@ -352,13 +353,125 @@ fun OnlineSearchResult(
             tonalElevation = 6.dp,
             shadowElevation = 0.dp
         ) {
-            // Empty content for search suggestions (can be added later)
+            // Search suggestions content
+            if (isSearchBarExpanded && query.text.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Search suggestions based on current query
+                    val suggestions = listOf(
+                        "${query.text} songs",
+                        "${query.text} album",
+                        "${query.text} artist",
+                        "${query.text} playlist",
+                        "${query.text} lyrics"
+                    )
+                    
+                    items(suggestions) { suggestion ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = {
+                                        onSearch(suggestion)
+                                    }
+                                )
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.search),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(end = 16.dp)
+                            )
+                            Text(
+                                text = suggestion,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    query = TextFieldValue(suggestion, TextRange(suggestion.length))
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.arrow_back),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.rotation(225f) // Makes it point up-left like a "fill" arrow
+                                )
+                            }
+                        }
+                    }
+                }
+            } else if (isSearchBarExpanded) {
+                // Show recent searches when expanded but no query
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    item {
+                        Text(
+                            text = "Recent searches",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                    val recentSearches = listOf(
+                        "Taylor Swift",
+                        "The Weeknd",
+                        "Billie Eilish"
+                    )
+                    
+                    items(recentSearches) { recentSearch ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = {
+                                        query = TextFieldValue(recentSearch, TextRange(recentSearch.length))
+                                        onSearch(recentSearch)
+                                    }
+                                )
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.search),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(end = 16.dp)
+                            )
+                            Text(
+                                text = recentSearch,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    // Remove from recent searches (placeholder action)
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.close),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        // Content below search bar
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        // Main content area below search bar (only show when search bar is not expanded)
+        if (!isSearchBarExpanded) {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
             ChipsRow(
                 chips = listOf(
                     null to stringResource(R.string.filter_all),
@@ -383,9 +496,7 @@ fun OnlineSearchResult(
 
             LazyColumn(
                 state = lazyListState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 if (searchFilter == null) {
                     searchSummary?.summaries?.forEach { summary ->
@@ -448,6 +559,7 @@ fun OnlineSearchResult(
                 item(key = "bottom_spacer") {
                     Spacer(modifier = Modifier.height(MiniPlayerHeight + MiniPlayerBottomSpacing + NavigationBarHeight))
                 }
+            }
             }
         }
     }
