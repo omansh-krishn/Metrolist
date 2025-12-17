@@ -4,7 +4,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -25,13 +28,19 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
@@ -100,6 +109,8 @@ fun OnlineSearchResult(
 
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
     
     // Extract query from navigation arguments
     val encodedQuery = navController.currentBackStackEntry?.arguments?.getString("query") ?: ""
@@ -115,9 +126,13 @@ fun OnlineSearchResult(
         mutableStateOf(TextFieldValue(decodedQuery, TextRange(decodedQuery.length)))
     }
     
+    var isSearchBarExpanded by rememberSaveable { mutableStateOf(false) }
+    
     val onSearch: (String) -> Unit = remember {
         { searchQuery ->
             if (searchQuery.isNotEmpty()) {
+                focusManager.clearFocus()
+                isSearchBarExpanded = false
                 navController.navigate("search/${URLEncoder.encode(searchQuery, "UTF-8")}") {
                     popUpTo("search/${URLEncoder.encode(decodedQuery, "UTF-8")}") {
                         inclusive = true
@@ -233,15 +248,116 @@ fun OnlineSearchResult(
         )
     }
 
-    Box {
-        LazyColumn(
-            state = lazyListState,
-            contentPadding =
-            LocalPlayerAwareWindowInsets.current
-                .add(WindowInsets(top = SearchFilterHeight + AppBarHeight))
-                .add(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                .asPaddingValues(),
-        ) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    if (isSearchBarExpanded) {
+                        OutlinedTextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            placeholder = {
+                                Text(text = stringResource(R.string.search_yt_music))
+                            },
+                            trailingIcon = {
+                                Row {
+                                    if (query.text.isNotEmpty()) {
+                                        IconButton(onClick = { query = TextFieldValue("") }) {
+                                            Icon(
+                                                painter = painterResource(R.drawable.close),
+                                                contentDescription = null
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            ),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(
+                                onSearch = { onSearch(query.text) }
+                            )
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = { 
+                                        isSearchBarExpanded = true
+                                    }
+                                )
+                        ) {
+                            Text(
+                                text = decodedQuery.ifEmpty { stringResource(R.string.search_yt_music) },
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { 
+                        if (isSearchBarExpanded) {
+                            isSearchBarExpanded = false
+                            focusManager.clearFocus()
+                        } else {
+                            navController.navigateUp()
+                        }
+                    }) {
+                        Icon(
+                            painter = painterResource(R.drawable.arrow_back),
+                            contentDescription = null
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        }
+    ) { paddingValues ->
+        Column {
+            ChipsRow(
+                chips =
+                listOf(
+                    null to stringResource(R.string.filter_all),
+                    FILTER_SONG to stringResource(R.string.filter_songs),
+                    FILTER_VIDEO to stringResource(R.string.filter_videos),
+                    FILTER_ALBUM to stringResource(R.string.filter_albums),
+                    FILTER_ARTIST to stringResource(R.string.filter_artists),
+                    FILTER_COMMUNITY_PLAYLIST to stringResource(R.string.filter_community_playlists),
+                    FILTER_FEATURED_PLAYLIST to stringResource(R.string.filter_featured_playlists),
+                ),
+                currentValue = searchFilter,
+                onValueUpdate = {
+                    if (viewModel.filter.value != it) {
+                        viewModel.filter.value = it
+                    }
+                    coroutineScope.launch {
+                        lazyListState.animateScrollToItem(0)
+                    }
+                },
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .fillMaxWidth()
+            )
+            
+            LazyColumn(
+                state = lazyListState,
+                contentPadding = LocalPlayerAwareWindowInsets.current
+                    .add(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+                    .asPaddingValues(),
+                modifier = Modifier.padding(paddingValues)
+            ) {
         if (searchFilter == null) {
             searchSummary?.summaries?.forEach { summary ->
                 item {
@@ -290,96 +406,23 @@ fun OnlineSearchResult(
             }
         }
 
-        if (searchFilter == null && searchSummary == null || searchFilter != null && itemsPage == null) {
-            item {
-                ShimmerHost {
-                    repeat(8) {
-                        ListItemPlaceHolder()
-                    }
-                }
-            }
-        }
-        
-        // Search Bar
-        Row(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
-                .windowInsetsPadding(
-                    WindowInsets.systemBars
-                        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                )
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            IconButton(onClick = { navController.navigateUp() }) {
-                Icon(
-                    painter = painterResource(R.drawable.arrow_back),
-                    contentDescription = null
-                )
-            }
-            
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
-                placeholder = {
-                    Text(text = stringResource(R.string.search_yt_music))
-                },
-                trailingIcon = {
-                    Row {
-                        if (query.text.isNotEmpty()) {
-                            IconButton(onClick = { query = TextFieldValue("") }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.close),
-                                    contentDescription = null
-                                )
+                if (searchFilter == null && searchSummary == null || searchFilter != null && itemsPage == null) {
+                    item {
+                        ShimmerHost {
+                            repeat(8) {
+                                ListItemPlaceHolder()
                             }
                         }
                     }
-                },
-                singleLine = true,
-                modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = { onSearch(query.text) }
-                )
-            )
+                }
+            }
         }
-        
-        ChipsRow(
-            chips =
-            listOf(
-                null to stringResource(R.string.filter_all),
-                FILTER_SONG to stringResource(R.string.filter_songs),
-                FILTER_VIDEO to stringResource(R.string.filter_videos),
-                FILTER_ALBUM to stringResource(R.string.filter_albums),
-                FILTER_ARTIST to stringResource(R.string.filter_artists),
-                FILTER_COMMUNITY_PLAYLIST to stringResource(R.string.filter_community_playlists),
-                FILTER_FEATURED_PLAYLIST to stringResource(R.string.filter_featured_playlists),
-            ),
-            currentValue = searchFilter,
-            onValueUpdate = {
-                if (viewModel.filter.value != it) {
-                    viewModel.filter.value = it
-                }
-                coroutineScope.launch {
-                    lazyListState.animateScrollToItem(0)
-                }
-            },
-            modifier =
-            Modifier
-                .background(MaterialTheme.colorScheme.surface)
-                .windowInsetsPadding(
-                    WindowInsets.systemBars
-                        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                        .add(WindowInsets(top = AppBarHeight))
-                )
-                .fillMaxWidth()
-        )
+    }
+    
+    // Auto-focus when search bar is expanded
+    LaunchedEffect(isSearchBarExpanded) {
+        if (isSearchBarExpanded) {
+            focusRequester.requestFocus()
+        }
     }
 }
