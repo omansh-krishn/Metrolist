@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -216,37 +218,7 @@ fun OnlinePlaylistScreen(
                 if (isLoading) {
                     item(key = "loading_shimmer") {
                         ShimmerHost {
-                            Column(Modifier.padding(12.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Spacer(
-                                        modifier =
-                                        Modifier
-                                            .size(AlbumThumbnailSize)
-                                            .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                                            .background(MaterialTheme.colorScheme.onSurface),
-                                    )
-
-                                    Spacer(Modifier.width(16.dp))
-
-                                    Column(
-                                        verticalArrangement = Arrangement.Center,
-                                    ) {
-                                        TextPlaceholder()
-                                        TextPlaceholder()
-                                        TextPlaceholder()
-                                    }
-                                }
-
-                                Spacer(Modifier.padding(8.dp))
-
-                                Row {
-                                    ButtonPlaceholder(Modifier.weight(1f))
-
-                                    Spacer(Modifier.width(12.dp))
-
-                                    ButtonPlaceholder(Modifier.weight(1f))
-                                }
-                            }
+                            PlaylistHeaderPlaceholder()
 
                             repeat(6) {
                                 ListItemPlaceHolder()
@@ -256,204 +228,13 @@ fun OnlinePlaylistScreen(
                 } else if (playlist != null) {
                     if (!isSearching) {
                         item(key = "playlist_header") {
-                            Column(
-                                modifier =
-                                Modifier
-                                    .padding(12.dp)
-                                    .animateItem(),
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .size(AlbumThumbnailSize)
-                                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                                        .fillMaxWidth(),
-                                ) {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(LocalContext.current)
-                                            .data(playlist.thumbnail)
-                                            .build(),
-                                        contentDescription = null,
-                                        placeholder = painterResource(R.drawable.queue_music),
-                                        error = painterResource(R.drawable.queue_music),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(ThumbnailCornerRadius)),
-                                        )
-                                    }
-
-                                    Spacer(Modifier.width(16.dp))
-
-                                    Column(
-                                        verticalArrangement = Arrangement.Center,
-                                    ) {
-                                        AutoResizeText(
-                                            text = playlist.title,
-                                            fontWeight = FontWeight.Bold,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                            fontSizeRange = FontSizeRange(16.sp, 22.sp),
-                                        )
-
-                                        playlist.author?.let { artist ->
-                                            Text(
-                                                buildAnnotatedString {
-                                                    withStyle(
-                                                        style =
-                                                        MaterialTheme.typography.titleMedium
-                                                            .copy(
-                                                                fontWeight = FontWeight.Normal,
-                                                                color = MaterialTheme.colorScheme.onBackground,
-                                                            ).toSpanStyle(),
-                                                    ) {
-                                                        if (artist.id != null) {
-                                                            val link =
-                                                                LinkAnnotation.Clickable(artist.id!!) {
-                                                                    navController.navigate("artist/${artist.id!!}")
-                                                                }
-                                                            withLink(link) {
-                                                                append(artist.name)
-                                                            }
-                                                        } else {
-                                                            append(artist.name)
-                                                        }
-                                                    }
-                                                },
-                                            )
-                                        }
-
-                                        playlist.songCountText?.let { songCountText ->
-                                            Text(
-                                                text = songCountText,
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Normal,
-                                            )
-                                        }
-
-                                        Row {
-                                            if (playlist.id != "LM") {
-                                                IconButton(
-                                                    onClick = {
-                                                        if (dbPlaylist?.playlist == null) {
-                                                            database.transaction {
-                                                                val playlistEntity = PlaylistEntity(
-                                                                    name = playlist.title,
-                                                                    browseId = playlist.id,
-                                                                    thumbnailUrl = playlist.thumbnail,
-                                                                    isEditable = playlist.isEditable,
-                                                                    playEndpointParams = playlist.playEndpoint?.params,
-                                                                    shuffleEndpointParams = playlist.shuffleEndpoint?.params,
-                                                                    radioEndpointParams = playlist.radioEndpoint?.params
-                                                                ).toggleLike()
-                                                                insert(playlistEntity)
-                                                                songs.map(SongItem::toMediaMetadata)
-                                                                    .onEach(::insert)
-                                                                    .mapIndexed { index, song ->
-                                                                        PlaylistSongMap(
-                                                                            songId = song.id,
-                                                                            playlistId = playlistEntity.id,
-                                                                            position = index
-                                                                        )
-                                                                    }
-                                                                    .forEach(::insert)
-                                                            }
-                                                        } else {
-                                                            database.transaction {
-                                                                // Update playlist information including thumbnail before toggling like
-                                                                val currentPlaylist = dbPlaylist!!.playlist
-                                                                update(currentPlaylist, playlist)
-                                                                update(currentPlaylist.toggleLike())
-                                                            }
-                                                        }
-                                                    }
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(
-                                                            if (dbPlaylist?.playlist?.bookmarkedAt != null) R.drawable.favorite else R.drawable.favorite_border
-                                                        ),
-                                                        contentDescription = null,
-                                                        tint = if (dbPlaylist?.playlist?.bookmarkedAt != null) MaterialTheme.colorScheme.error else LocalContentColor.current
-                                                    )
-                                                }
-                                            }
-
-                                            IconButton(
-                                                onClick = {
-                                                    menuState.show {
-                                                        YouTubePlaylistMenu(
-                                                            playlist = playlist,
-                                                            songs = songs,
-                                                            coroutineScope = coroutineScope,
-                                                            onDismiss = menuState::dismiss,
-                                                            selectAction = { selection = true },
-                                                            canSelect = true,
-                                                        )
-                                                    }
-                                                },
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.more_vert),
-                                                    contentDescription = null,
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(Modifier.height(12.dp))
-
-                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    if (songs.isNotEmpty()) {
-                                        Button(
-                                            onClick = {
-                                                playerConnection.playQueue(
-                                                    ListQueue(
-                                                        title = playlist.title,
-                                                        items = songs.map { it.toMediaItem() },
-                                                    )
-                                                )
-                                            },
-                                            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.play),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(ButtonDefaults.IconSize)
-                                            )
-                                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                            Text(stringResource(R.string.play))
-                                        }
-                                    }
-
-                                    playlist.shuffleEndpoint?.let {
-                                        OutlinedButton(
-                                            onClick = {
-                                                val shuffledSongs = songs.map { it.toMediaItem() }.shuffled()
-                                                playerConnection.playQueue(
-                                                    ListQueue(
-                                                        title = playlist.title,
-                                                        items = shuffledSongs,
-                                                    )
-                                                )
-                                            },
-                                            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.shuffle),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(ButtonDefaults.IconSize)
-                                            )
-                                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                            Text(stringResource(R.string.shuffle))
-                                        }
-                                    }
-                                }
-                            }
+                            OnlinePlaylistHeader(
+                                playlist = playlist,
+                                songs = songs,
+                                dbPlaylist = dbPlaylist,
+                                navController = navController,
+                                modifier = Modifier.animateItem()
+                            )
                         }
                     }
 
@@ -726,5 +507,393 @@ fun OnlinePlaylistScreen(
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime))
                 .align(Alignment.BottomCenter),
         )
+    }
+}
+
+@Composable
+private fun OnlinePlaylistHeader(
+    playlist: PlaylistPage,
+    songs: List<SongItem>,
+    dbPlaylist: Playlist?,
+    navController: NavController,
+    modifier: Modifier = Modifier
+) {
+    val playerConnection = LocalPlayerConnection.current ?: return
+    val database = LocalDatabase.current
+    val menuState = LocalMenuState.current
+    val coroutineScope = rememberCoroutineScope()
+    
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Playlist Thumbnail - Large centered with shadow
+        Box(
+            modifier = Modifier.padding(top = 8.dp, bottom = 20.dp)
+        ) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier
+                    .size(240.dp)
+                    .shadow(
+                        elevation = 24.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(playlist.thumbnail)
+                        .build(),
+                    contentDescription = null,
+                    placeholder = painterResource(R.drawable.queue_music),
+                    error = painterResource(R.drawable.queue_music),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // Playlist Name
+        Text(
+            text = playlist.title,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        )
+
+        // Author
+        playlist.author?.let { artist ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                buildAnnotatedString {
+                    withStyle(
+                        style = MaterialTheme.typography.bodyMedium
+                            .copy(
+                                fontWeight = FontWeight.Normal,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ).toSpanStyle(),
+                    ) {
+                        if (artist.id != null) {
+                            val link = LinkAnnotation.Clickable(artist.id!!) {
+                                navController.navigate("artist/${artist.id!!}")
+                            }
+                            withLink(link) {
+                                append(artist.name)
+                            }
+                        } else {
+                            append(artist.name)
+                        }
+                    }
+                },
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Metadata Row - Song Count
+        playlist.songCountText?.let { songCountText ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 48.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MetadataChip(
+                    icon = R.drawable.music_note,
+                    text = songCountText
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Action Buttons Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Like Button (if not LM playlist)
+            if (playlist.id != "LM") {
+                androidx.compose.material3.Surface(
+                    onClick = {
+                        if (dbPlaylist?.playlist == null) {
+                            database.transaction {
+                                val playlistEntity = PlaylistEntity(
+                                    name = playlist.title,
+                                    browseId = playlist.id,
+                                    thumbnailUrl = playlist.thumbnail,
+                                    isEditable = playlist.isEditable,
+                                    playEndpointParams = playlist.playEndpoint?.params,
+                                    shuffleEndpointParams = playlist.shuffleEndpoint?.params,
+                                    radioEndpointParams = playlist.radioEndpoint?.params
+                                ).toggleLike()
+                                insert(playlistEntity)
+                                songs.map(SongItem::toMediaMetadata)
+                                    .onEach(::insert)
+                                    .mapIndexed { index, song ->
+                                        PlaylistSongMap(
+                                            songId = song.id,
+                                            playlistId = playlistEntity.id,
+                                            position = index
+                                        )
+                                    }
+                                    .forEach(::insert)
+                            }
+                        } else {
+                            database.transaction {
+                                val currentPlaylist = dbPlaylist!!.playlist
+                                update(currentPlaylist, playlist)
+                                update(currentPlaylist.toggleLike())
+                            }
+                        }
+                    },
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (dbPlaylist?.playlist?.bookmarkedAt != null) R.drawable.favorite else R.drawable.favorite_border
+                            ),
+                            contentDescription = null,
+                            tint = if (dbPlaylist?.playlist?.bookmarkedAt != null)
+                                MaterialTheme.colorScheme.error
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+
+            // Play Button
+            if (songs.isNotEmpty()) {
+                Button(
+                    onClick = {
+                        playerConnection.playQueue(
+                            ListQueue(
+                                title = playlist.title,
+                                items = songs.map { it.toMediaItem() },
+                            )
+                        )
+                    },
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.play),
+                        contentDescription = stringResource(R.string.play),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            // Shuffle Button
+            playlist.shuffleEndpoint?.let {
+                Button(
+                    onClick = {
+                        val shuffledSongs = songs.map { it.toMediaItem() }.shuffled()
+                        playerConnection.playQueue(
+                            ListQueue(
+                                title = playlist.title,
+                                items = shuffledSongs,
+                            )
+                        )
+                    },
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.shuffle),
+                        contentDescription = stringResource(R.string.shuffle),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            // More Button
+            androidx.compose.material3.Surface(
+                onClick = {
+                    menuState.show {
+                        YouTubePlaylistMenu(
+                            playlist = playlist,
+                            songs = songs,
+                            coroutineScope = coroutineScope,
+                            onDismiss = menuState::dismiss,
+                            selectAction = { /* selection = true */ },
+                            canSelect = true,
+                        )
+                    }
+                },
+                shape = androidx.compose.foundation.shape.CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.more_vert),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetadataChip(
+    icon: Int,
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.material3.Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlaylistHeaderPlaceholder() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Large centered thumbnail placeholder with shadow
+        Box(
+            modifier = Modifier.padding(top = 8.dp, bottom = 20.dp)
+        ) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier
+                    .size(240.dp)
+                    .shadow(
+                        elevation = 24.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+            ) {}
+        }
+
+        // Title placeholder
+        Spacer(
+            modifier = Modifier
+                .height(24.dp)
+                .fillMaxWidth(0.6f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Author placeholder
+        Spacer(
+            modifier = Modifier
+                .height(16.dp)
+                .fillMaxWidth(0.4f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Metadata chip placeholder
+        Spacer(
+            modifier = Modifier
+                .height(32.dp)
+                .width(120.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Action buttons row placeholder
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Like button placeholder
+            Spacer(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+
+            // Play button placeholder
+            Spacer(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+
+            // Shuffle button placeholder
+            Spacer(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+
+            // More button placeholder
+            Spacer(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+        }
     }
 }
