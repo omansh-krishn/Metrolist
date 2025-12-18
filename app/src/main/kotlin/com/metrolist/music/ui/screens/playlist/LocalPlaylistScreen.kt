@@ -43,6 +43,8 @@ import androidx.compose.material3.Button
 import com.metrolist.music.ui.component.ActionPromptDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -926,6 +928,25 @@ fun LocalPlaylistScreen(
                             contentDescription = null
                         )
                     }
+                    
+                    IconButton(
+                        onClick = {
+                            menuState.show {
+                                PlaylistOptionsMenu(
+                                    playlist = playlist,
+                                    onDismiss = menuState::dismiss,
+                                    onShowEditDialog = onShowEditDialog,
+                                    onShowRemoveDownloadDialog = onShowRemoveDownloadDialog,
+                                    onShowDeletePlaylistDialog = onshowDeletePlaylistDialog
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.more_vert),
+                            contentDescription = null
+                        )
+                    }
                 }
             }
         )
@@ -937,6 +958,66 @@ fun LocalPlaylistScreen(
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime))
                 .align(Alignment.BottomCenter),
         )
+    }
+}
+
+@Composable
+fun PlaylistOptionsMenu(
+    playlist: Playlist?,
+    onDismiss: () -> Unit,
+    onShowEditDialog: () -> Unit,
+    onShowRemoveDownloadDialog: () -> Unit,
+    onShowDeletePlaylistDialog: () -> Unit
+) {
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = onDismiss
+    ) {
+        if (playlist?.playlist?.editable == true) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.edit_playlist)) },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.edit),
+                        contentDescription = null
+                    )
+                },
+                onClick = {
+                    onDismiss()
+                    onShowEditDialog()
+                }
+            )
+        }
+        
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.remove_download)) },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.offline_pin),
+                    contentDescription = null
+                )
+            },
+            onClick = {
+                onDismiss()
+                onShowRemoveDownloadDialog()
+            }
+        )
+        
+        if (playlist?.playlist?.editable == true) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.delete_playlist)) },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(R.drawable.delete),
+                        contentDescription = null
+                    )
+                },
+                onClick = {
+                    onDismiss()
+                    onShowDeletePlaylistDialog()
+                }
+            )
+        }
     }
 }
 

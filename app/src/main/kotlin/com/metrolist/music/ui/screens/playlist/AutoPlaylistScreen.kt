@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -769,7 +771,50 @@ fun AutoPlaylistScreen(
                             contentDescription = null
                         )
                     }
+                    
+                    IconButton(
+                        onClick = {
+                            menuState.show {
+                                AutoPlaylistOptionsMenu(
+                                    playlistType = playlistType,
+                                    onDismiss = menuState::dismiss,
+                                    onShowRemoveDownloadDialog = { showRemoveDownloadDialog = true }
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.more_vert),
+                            contentDescription = null
+                        )
+                    }
                 }
+            }
+        )
+    }
+}
+
+@Composable
+fun AutoPlaylistOptionsMenu(
+    playlistType: PlaylistType,
+    onDismiss: () -> Unit,
+    onShowRemoveDownloadDialog: () -> Unit
+) {
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = onDismiss
+    ) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.remove_download)) },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.offline_pin),
+                    contentDescription = null
+                )
+            },
+            onClick = {
+                onDismiss()
+                onShowRemoveDownloadDialog()
             }
         )
     }

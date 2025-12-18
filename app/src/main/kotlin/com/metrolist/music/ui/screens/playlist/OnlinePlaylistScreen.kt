@@ -776,6 +776,22 @@ fun OnlinePlaylistScreen(
                                 contentDescription = null
                             )
                         }
+                        
+                        IconButton(
+                            onClick = {
+                                menuState.show {
+                                    OnlinePlaylistOptionsMenu(
+                                        onDismiss = menuState::dismiss,
+                                        onShowRemoveDownloadDialog = { showRemoveDownloadDialog = true }
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.more_vert),
+                                contentDescription = null
+                            )
+                        }
                     }
                 }
             }
@@ -787,6 +803,31 @@ fun OnlinePlaylistScreen(
             Modifier
                 .windowInsetsPadding(LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime))
                 .align(Alignment.BottomCenter),
+        )
+    }
+}
+
+@Composable
+fun OnlinePlaylistOptionsMenu(
+    onDismiss: () -> Unit,
+    onShowRemoveDownloadDialog: () -> Unit
+) {
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = onDismiss
+    ) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.remove_download)) },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.offline_pin),
+                    contentDescription = null
+                )
+            },
+            onClick = {
+                onDismiss()
+                onShowRemoveDownloadDialog()
+            }
         )
     }
 }

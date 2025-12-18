@@ -532,7 +532,46 @@ fun CachePlaylistScreen(
                             contentDescription = null
                         )
                     }
+                    
+                    IconButton(
+                        onClick = {
+                            menuState.show {
+                                CachePlaylistOptionsMenu(
+                                    onDismiss = menuState::dismiss
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.more_vert),
+                            contentDescription = null
+                        )
+                    }
                 }
+            }
+        )
+    }
+}
+
+@Composable
+fun CachePlaylistOptionsMenu(
+    onDismiss: () -> Unit
+) {
+    DropdownMenu(
+        expanded = true,
+        onDismissRequest = onDismiss
+    ) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.clear_cache)) },
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.delete),
+                    contentDescription = null
+                )
+            },
+            onClick = {
+                onDismiss()
+                // Add clear cache functionality here
             }
         )
     }
