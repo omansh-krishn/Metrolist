@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -175,6 +176,10 @@ fun OnlinePlaylistScreen(
         mutableStateOf(false)
     }
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
+    
+    var showRemoveDownloadDialog by remember {
+        mutableStateOf(false)
+    }
 
     val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -822,7 +827,7 @@ fun OnlinePlaylistOptionsMenu(
             text = { Text(stringResource(R.string.remove_download)) },
             leadingIcon = {
                 Icon(
-                    painter = painterResource(R.drawable.offline_pin),
+                    painter = painterResource(R.drawable.offline),
                     contentDescription = null
                 )
             },

@@ -935,9 +935,9 @@ fun LocalPlaylistScreen(
                                 PlaylistOptionsMenu(
                                     playlist = playlist,
                                     onDismiss = menuState::dismiss,
-                                    onShowEditDialog = onShowEditDialog,
-                                    onShowRemoveDownloadDialog = onShowRemoveDownloadDialog,
-                                    onShowDeletePlaylistDialog = onShowDeletePlaylistDialog
+                                    onShowEditDialog = { showEditDialog = true },
+                                    onShowRemoveDownloadDialog = { showRemoveDownloadDialog = true },
+                                    onShowDeletePlaylistDialog = { showDeletePlaylistDialog = true }
                                 )
                             }
                         }
