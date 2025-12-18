@@ -663,6 +663,7 @@ fun OnlinePlaylistScreen(
             }
         }
 
+        // Scrollbar for the online playlist
         DraggableScrollbar(
             modifier = Modifier
                 .padding(
@@ -804,6 +805,7 @@ fun OnlinePlaylistScreen(
             }
         )
 
+        // Snackbar host for notifications
         SnackbarHost(
             hostState = snackbarHostState,
             modifier =

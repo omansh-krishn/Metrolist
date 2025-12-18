@@ -641,6 +641,7 @@ fun AutoPlaylistScreen(
             }
         }
 
+        // Scrollbar for the playlist
         DraggableScrollbar(
             modifier = Modifier
                 .padding(

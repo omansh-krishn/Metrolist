@@ -538,6 +538,7 @@ fun CachePlaylistScreen(
                     IconButton(
                         onClick = {
                             menuState.show {
+                                // Show cache playlist options
                                 CachePlaylistOptionsMenu(
                                     onDismiss = menuState::dismiss
                                 )
