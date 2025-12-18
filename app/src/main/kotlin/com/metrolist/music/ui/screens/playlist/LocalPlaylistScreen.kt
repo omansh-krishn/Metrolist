@@ -937,7 +937,7 @@ fun LocalPlaylistScreen(
                                     onDismiss = menuState::dismiss,
                                     onShowEditDialog = onShowEditDialog,
                                     onShowRemoveDownloadDialog = onShowRemoveDownloadDialog,
-                                    onShowDeletePlaylistDialog = onshowDeletePlaylistDialog
+                                    onShowDeletePlaylistDialog = onShowDeletePlaylistDialog
                                 )
                             }
                         }
@@ -973,7 +973,7 @@ fun PlaylistOptionsMenu(
         expanded = true,
         onDismissRequest = onDismiss
     ) {
-        if (playlist?.playlist?.editable == true) {
+        if (playlist?.playlist?.isEditable == true) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.edit_playlist)) },
                 leadingIcon = {
@@ -993,7 +993,7 @@ fun PlaylistOptionsMenu(
             text = { Text(stringResource(R.string.remove_download)) },
             leadingIcon = {
                 Icon(
-                    painter = painterResource(R.drawable.offline_pin),
+                    painter = painterResource(R.drawable.download),
                     contentDescription = null
                 )
             },
@@ -1003,9 +1003,9 @@ fun PlaylistOptionsMenu(
             }
         )
         
-        if (playlist?.playlist?.editable == true) {
+        if (playlist?.playlist?.isEditable == true) {
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.delete_playlist)) },
+                text = { Text(stringResource(R.string.delete)) },
                 leadingIcon = {
                     Icon(
                         painter = painterResource(R.drawable.delete),

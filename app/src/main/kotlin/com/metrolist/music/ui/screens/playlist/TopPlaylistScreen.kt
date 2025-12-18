@@ -758,7 +758,7 @@ fun TopPlaylistOptionsMenu(
             text = { Text(stringResource(R.string.remove_download)) },
             leadingIcon = {
                 Icon(
-                    painter = painterResource(R.drawable.offline_pin),
+                    painter = painterResource(R.drawable.download),
                     contentDescription = null
                 )
             },
