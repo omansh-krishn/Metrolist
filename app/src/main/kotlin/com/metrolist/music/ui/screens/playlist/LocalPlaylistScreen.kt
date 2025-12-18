@@ -488,7 +488,7 @@ fun LocalPlaylistScreen(
                                 songs = songs,
                                 onShowEditDialog = { showEditDialog = true },
                                 onShowRemoveDownloadDialog = { showRemoveDownloadDialog = true },
-                                onshowDeletePlaylistDialog = { showDeletePlaylistDialog = true },
+                                onShowDeletePlaylistDialog = { showDeletePlaylistDialog = true },
                                 snackbarHostState = snackbarHostState,
                                 modifier = Modifier.animateItem()
                             )
@@ -1027,7 +1027,7 @@ fun LocalPlaylistHeader(
     songs: List<PlaylistSong>,
     onShowEditDialog: () -> Unit,
     onShowRemoveDownloadDialog: () -> Unit,
-    onshowDeletePlaylistDialog: () -> Unit,
+    onShowDeletePlaylistDialog: () -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier,
 ) {
@@ -1428,7 +1428,7 @@ fun LocalPlaylistHeader(
             // Like/Delete Button (depending on editable)
             if (editable) {
                 Surface(
-                    onClick = onshowDeletePlaylistDialog,
+                    onClick = onShowDeletePlaylistDialog,
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.size(48.dp)

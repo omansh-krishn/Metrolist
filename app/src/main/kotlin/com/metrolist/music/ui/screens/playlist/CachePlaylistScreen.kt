@@ -554,6 +554,7 @@ fun CachePlaylistScreen(
             }
         )
     }
+}
 
 @Composable
 fun CachePlaylistOptionsMenu(

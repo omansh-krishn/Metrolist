@@ -314,9 +314,167 @@ fun AutoPlaylistScreen(
 
     val state = rememberLazyListState()
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
+    Column(
+        modifier = Modifier.fillMaxSize()
     ) {
+        TopAppBar(
+            title = {
+                when {
+                    selection -> {
+                        val count = wrappedSongs?.count { it.isSelected } ?: 0
+                        Text(
+                            text = pluralStringResource(R.plurals.n_song, count, count),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                    isSearching -> {
+                        TextField(
+                            value = query,
+                            onValueChange = { query = it },
+                            placeholder = {
+                                Text(
+                                    text = stringResource(R.string.search),
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                            },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.titleLarge,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester)
+                        )
+                    }
+                    else -> {
+                        Text(
+                            text = playlist,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
+                }
+            },
+            navigationIcon = {
+                IconButton(
+                    onClick = {
+                        if (selection) {
+                            wrappedSongs?.forEach { it.isSelected = false }
+                        } else {
+                            navController.navigateUp()
+                        }
+                    },
+                ) {
+                    Icon(
+                        painter = painterResource(if (selection) R.drawable.close else R.drawable.arrow_back),
+                        contentDescription = null,
+                    )
+                }
+            },
+            actions = {
+                if (selection) {
+                    IconButton(
+                        onClick = {
+                            wrappedSongs?.let { songs ->
+                                val selectedSongs = songs.filter { it.isSelected }.map { it.item }
+                                if (selectedSongs.isNotEmpty()) {
+                                    playerConnection.playQueue(
+                                        ListQueue(
+                                            title = context.getString(R.string.queue_all_songs),
+                                            items = selectedSongs.map { it.toMediaItem() },
+                                        )
+                                    )
+                                }
+                            }
+                        },
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.play),
+                            contentDescription = null,
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            wrappedSongs?.let { songs ->
+                                val selectedSongs = songs.filter { it.isSelected }.map { it.item }
+                                if (selectedSongs.isNotEmpty()) {
+                                    playerConnection.addToQueue(
+                                        items = selectedSongs.map { it.toMediaItem() },
+                                    )
+                                }
+                            }
+                        },
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.queue_music),
+                            contentDescription = null,
+                        )
+                    }
+
+                    // Additional actions can be added here
+
+                    if (viewModel.playlist == "offline") {
+                        IconButton(
+                            onClick = {
+                                showRemoveDownloadDialog = true
+                            },
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.download),
+                                contentDescription = null,
+                            )
+                        }
+                    }
+                } else {
+                    if (!isSearching) {
+                        IconButton(
+                            onClick = {
+                                isSearching = true
+                                focusRequester.requestFocus()
+                            },
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.search),
+                                contentDescription = null,
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = {
+                            menuState.show {
+                                AutoPlaylistOptionsMenu(
+                                    playlistType = when (viewModel.playlist) {
+                                        "liked" -> PlaylistType.LIKE
+                                        "offline" -> PlaylistType.DOWNLOAD
+                                        "uploaded" -> PlaylistType.UPLOADED
+                                        else -> PlaylistType.OTHER
+                                    },
+                                    onDismiss = menuState::dismiss,
+                                    onShowRemoveDownloadDialog = { showRemoveDownloadDialog = true }
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.more_vert),
+                            contentDescription = null
+                        )
+                    }
+                }
+            },
+            scrollBehavior = scrollBehavior
+        )
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+        ) {
         LazyColumn(
             state = state,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
@@ -648,153 +806,12 @@ fun AutoPlaylistScreen(
                     LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime)
                         .asPaddingValues()
                 )
-                .align(Alignment.CenterEnd),
+                ,
             scrollState = state,
             headerItems = 2
         )
-
-        TopAppBar(
-            title = {
-                when {
-                    selection -> {
-                        val count = wrappedSongs?.count { it.isSelected } ?: 0
-                        Text(
-                            text = pluralStringResource(R.plurals.n_song, count, count),
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
-                    isSearching -> {
-                        TextField(
-                            value = query,
-                            onValueChange = { query = it },
-                            placeholder = {
-                                Text(
-                                    text = stringResource(R.string.search),
-                                    style = MaterialTheme.typography.titleLarge
-                                )
-                            },
-                            singleLine = true,
-                            textStyle = MaterialTheme.typography.titleLarge,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent,
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .focusRequester(focusRequester)
-                        )
-                    }
-                    else -> {
-                        Text(
-                            text = playlist,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
-                }
-            },
-            navigationIcon = {
-                IconButton(
-                    onClick = {
-                        when {
-                            isSearching -> {
-                                isSearching = false
-                                query = TextFieldValue()
-                                focusManager.clearFocus()
-                            }
-                            selection -> {
-                                selection = false
-                            }
-                            else -> {
-                                navController.navigateUp()
-                            }
-                        }
-                    },
-                    onLongClick = {
-                        if (!isSearching && !selection) {
-                            navController.backToMain()
-                        }
-                    }
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            if (selection) R.drawable.close else R.drawable.arrow_back
-                        ),
-                        contentDescription = null
-                    )
-                }
-            },
-            actions = {
-                if (selection) {
-                    val count = wrappedSongs?.count { it.isSelected } ?: 0
-                    IconButton(
-                        onClick = {
-                            if (count == wrappedSongs?.size) {
-                                wrappedSongs.forEach { it.isSelected = false }
-                            } else {
-                                wrappedSongs?.forEach { it.isSelected = true }
-                            }
-                        },
-                    ) {
-                        Icon(
-                            painter = painterResource(
-                                if (count == wrappedSongs?.size) R.drawable.deselect else R.drawable.select_all
-                            ),
-                            contentDescription = null
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {
-                            menuState.show {
-                                SelectionSongMenu(
-                                    songSelection = wrappedSongs?.filter { it.isSelected }!!
-                                        .map { it.item },
-                                    onDismiss = menuState::dismiss,
-                                    clearAction = { selection = false },
-                                )
-                            }
-                        },
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.more_vert),
-                            contentDescription = null
-                        )
-                    }
-                } else if (!isSearching) {
-                    IconButton(
-                        onClick = { isSearching = true }
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.search),
-                            contentDescription = null
-                        )
-                    }
-                    
-                    IconButton(
-                        onClick = {
-                            menuState.show {
-                                AutoPlaylistOptionsMenu(
-                                    playlistType = playlistType,
-                                    onDismiss = menuState::dismiss,
-                                    onShowRemoveDownloadDialog = { showRemoveDownloadDialog = true }
-                                )
-                            }
-                        }
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.more_vert),
-                            contentDescription = null
-                        )
-                    }
-                }
-            }
-        )
     }
-
+}
 @Composable
 fun AutoPlaylistOptionsMenu(
     playlistType: PlaylistType,
