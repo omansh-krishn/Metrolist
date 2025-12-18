@@ -611,37 +611,7 @@ fun AlbumScreen(
                 ShimmerHost(
                     modifier = Modifier.animateItem()
                 ) {
-                    Column(Modifier.padding(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Spacer(
-                                modifier =
-                                Modifier
-                                    .size(AlbumThumbnailSize)
-                                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                                    .background(MaterialTheme.colorScheme.onSurface),
-                            )
-
-                            Spacer(Modifier.width(16.dp))
-
-                            Column(
-                                verticalArrangement = Arrangement.Center,
-                            ) {
-                                TextPlaceholder()
-                                TextPlaceholder()
-                                TextPlaceholder()
-                            }
-                        }
-
-                        Spacer(Modifier.padding(8.dp))
-
-                        Row {
-                            ButtonPlaceholder(Modifier.weight(1f))
-
-                            Spacer(Modifier.width(12.dp))
-
-                            ButtonPlaceholder(Modifier.weight(1f))
-                        }
-                    }
+                    AlbumHeaderPlaceholder()
 
                     repeat(6) {
                         ListItemPlaceHolder()
@@ -731,4 +701,107 @@ fun AlbumScreen(
             }
         }
     )
+}
+
+@Composable
+private fun AlbumHeaderPlaceholder() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Large centered thumbnail placeholder with shadow
+        Box(
+            modifier = Modifier.padding(top = 8.dp, bottom = 20.dp)
+        ) {
+            androidx.compose.material3.Surface(
+                modifier = Modifier
+                    .size(240.dp)
+                    .shadow(
+                        elevation = 24.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+            ) {}
+        }
+
+        // Title placeholder
+        Spacer(
+            modifier = Modifier
+                .height(24.dp)
+                .fillMaxWidth(0.6f)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Artist placeholder
+        Spacer(
+            modifier = Modifier
+                .height(16.dp)
+                .fillMaxWidth(0.4f)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Metadata chip placeholder
+        Spacer(
+            modifier = Modifier
+                .height(32.dp)
+                .width(120.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Action buttons row placeholder
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Like button placeholder
+            Spacer(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+
+            // Play button placeholder
+            Spacer(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+
+            // Shuffle button placeholder
+            Spacer(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+
+            // More button placeholder
+            Spacer(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            )
+        }
+    }
 }

@@ -686,30 +686,7 @@ private fun TopPlaylistHeader(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
 
-        // Additional action buttons row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            IconButton(
-                onClick = {
-                    playerConnection.addToQueue(
-                        items = songs.map { it.toMediaItem() },
-                    )
-                },
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.queue_music),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
     }
 }
 

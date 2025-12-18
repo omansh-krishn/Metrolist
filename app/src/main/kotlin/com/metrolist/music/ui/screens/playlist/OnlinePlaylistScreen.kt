@@ -81,6 +81,7 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
+import com.metrolist.innertube.models.PlaylistPage
 import com.metrolist.innertube.models.SongItem
 import com.metrolist.innertube.models.WatchEndpoint
 import com.metrolist.music.LocalDatabase
@@ -90,6 +91,7 @@ import com.metrolist.music.R
 import com.metrolist.music.constants.AlbumThumbnailSize
 import com.metrolist.music.constants.HideExplicitKey
 import com.metrolist.music.constants.ThumbnailCornerRadius
+import com.metrolist.music.db.entities.Playlist
 import com.metrolist.music.db.entities.PlaylistEntity
 import com.metrolist.music.db.entities.PlaylistSongMap
 import com.metrolist.music.extensions.metadata
@@ -298,7 +300,7 @@ fun OnlinePlaylistScreen(
                                             } else {
                                                 playerConnection.playQueue(
                                                     ListQueue(
-                                                        title = playlist.title,
+                                                        title = playlist.header.title,
                                                         items = filteredSongs.map { it.second.toMediaItem() },
                                                         startIndex = index
                                                     )
@@ -545,7 +547,7 @@ private fun OnlinePlaylistHeader(
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(playlist.thumbnail)
+                        .data(playlist.header.thumbnail)
                         .build(),
                     contentDescription = null,
                     placeholder = painterResource(R.drawable.queue_music),
@@ -558,7 +560,7 @@ private fun OnlinePlaylistHeader(
 
         // Playlist Name
         Text(
-            text = playlist.title,
+            text = playlist.header.title,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -568,7 +570,7 @@ private fun OnlinePlaylistHeader(
         )
 
         // Author
-        playlist.author?.let { artist ->
+        playlist.header.author?.let { artist ->
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 buildAnnotatedString {
@@ -599,7 +601,7 @@ private fun OnlinePlaylistHeader(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Metadata Row - Song Count
-        playlist.songCountText?.let { songCountText ->
+        playlist.header.songCountText?.let { songCountText ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -625,19 +627,19 @@ private fun OnlinePlaylistHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Like Button (if not LM playlist)
-            if (playlist.id != "LM") {
+            if (playlist.header.id != "LM") {
                 androidx.compose.material3.Surface(
                     onClick = {
                         if (dbPlaylist?.playlist == null) {
                             database.transaction {
                                 val playlistEntity = PlaylistEntity(
-                                    name = playlist.title,
-                                    browseId = playlist.id,
-                                    thumbnailUrl = playlist.thumbnail,
-                                    isEditable = playlist.isEditable,
-                                    playEndpointParams = playlist.playEndpoint?.params,
-                                    shuffleEndpointParams = playlist.shuffleEndpoint?.params,
-                                    radioEndpointParams = playlist.radioEndpoint?.params
+                                    name = playlist.header.title,
+                                    browseId = playlist.header.id,
+                                    thumbnailUrl = playlist.header.thumbnail,
+                                    isEditable = playlist.header.isEditable,
+                                    playEndpointParams = playlist.header.playEndpoint?.params,
+                                    shuffleEndpointParams = playlist.header.shuffleEndpoint?.params,
+                                    radioEndpointParams = playlist.header.radioEndpoint?.params
                                 ).toggleLike()
                                 insert(playlistEntity)
                                 songs.map(SongItem::toMediaMetadata)
@@ -654,7 +656,10 @@ private fun OnlinePlaylistHeader(
                         } else {
                             database.transaction {
                                 val currentPlaylist = dbPlaylist!!.playlist
-                                update(currentPlaylist, playlist)
+                                update(currentPlaylist.copy(
+                                    name = playlist.header.title,
+                                    thumbnailUrl = playlist.header.thumbnail
+                                ))
                                 update(currentPlaylist.toggleLike())
                             }
                         }
@@ -688,7 +693,7 @@ private fun OnlinePlaylistHeader(
                     onClick = {
                         playerConnection.playQueue(
                             ListQueue(
-                                title = playlist.title,
+                                title = playlist.header.title,
                                 items = songs.map { it.toMediaItem() },
                             )
                         )
@@ -707,13 +712,13 @@ private fun OnlinePlaylistHeader(
             }
 
             // Shuffle Button
-            playlist.shuffleEndpoint?.let {
+            playlist.header.shuffleEndpoint?.let {
                 Button(
                     onClick = {
                         val shuffledSongs = songs.map { it.toMediaItem() }.shuffled()
                         playerConnection.playQueue(
                             ListQueue(
-                                title = playlist.title,
+                                title = playlist.header.title,
                                 items = shuffledSongs,
                             )
                         )

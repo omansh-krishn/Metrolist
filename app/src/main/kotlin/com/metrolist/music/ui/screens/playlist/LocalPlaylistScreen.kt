@@ -117,6 +117,7 @@ import coil3.request.ImageRequest
 import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.models.SongItem
 import com.metrolist.innertube.utils.completed
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import com.metrolist.music.LocalDatabase
 import com.metrolist.music.LocalDownloadUtil
@@ -918,6 +919,70 @@ fun LocalPlaylistScreen(
                         )
                     }
                 } else if (!isSearching) {
+                    // Secondary action buttons (edit, sync, queue)
+                    playlist?.let { playlistData ->
+                        val editable = playlistData.playlist.isEditable
+                        
+                        if (editable) {
+                            IconButton(
+                                onClick = onShowEditDialog
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.edit),
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                        
+                        if (playlistData.playlist.browseId != null) {
+                            IconButton(
+                                onClick = {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        val playlistPage = YouTube.playlist(playlistData.playlist.browseId)
+                                            .completed()
+                                            .getOrNull() ?: return@launch
+                                        database.transaction {
+                                            clearPlaylist(playlistData.id)
+                                            playlistPage.songs
+                                                .map(SongItem::toMediaMetadata)
+                                                .onEach(::insert)
+                                                .mapIndexed { position, song ->
+                                                    PlaylistSongMap(
+                                                        songId = song.id,
+                                                        playlistId = playlistData.id,
+                                                        position = position,
+                                                        setVideoId = song.setVideoId
+                                                    )
+                                                }
+                                                .forEach(::insert)
+                                        }
+                                    }
+                                    coroutineScope.launch(Dispatchers.Main) {
+                                        snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.sync),
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                        
+                        IconButton(
+                            onClick = {
+                                playerConnection.addToQueue(
+                                    items = songs.map { it.song.toMediaItem() },
+                                )
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.queue_music),
+                                contentDescription = null
+                            )
+                        }
+                    }
+                    
                     IconButton(
                         onClick = { isSearching = true }
                     ) {
@@ -1509,80 +1574,7 @@ fun LocalPlaylistHeader(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
 
-        // Additional action buttons row (edit, sync, etc.)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-        ) {
-            if (editable) {
-                IconButton(
-                    onClick = onShowEditDialog,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.edit),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            if (playlist.playlist.browseId != null) {
-                IconButton(
-                    onClick = {
-                        scope.launch(Dispatchers.IO) {
-                            val playlistPage = YouTube.playlist(playlist.playlist.browseId)
-                                .completed()
-                                .getOrNull() ?: return@launch
-                            database.transaction {
-                                clearPlaylist(playlist.id)
-                                playlistPage.songs
-                                    .map(SongItem::toMediaMetadata)
-                                    .onEach(::insert)
-                                    .mapIndexed { position, song ->
-                                        PlaylistSongMap(
-                                            songId = song.id,
-                                            playlistId = playlist.id,
-                                            position = position,
-                                            setVideoId = song.setVideoId
-                                        )
-                                    }
-                                    .forEach(::insert)
-                            }
-                        }
-                        scope.launch(Dispatchers.Main) {
-                            snackbarHostState.showSnackbar(context.getString(R.string.playlist_synced))
-                        }
-                    },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.sync),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            IconButton(
-                onClick = {
-                    playerConnection.addToQueue(
-                        items = songs.map { it.song.toMediaItem() },
-                    )
-                },
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.queue_music),
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
     }
 }
 
