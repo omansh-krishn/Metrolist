@@ -21,6 +21,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -86,6 +91,37 @@ import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.utils.rememberPreference
 import com.metrolist.music.viewmodels.CachePlaylistViewModel
 import java.time.LocalDateTime
+
+@Composable
+private fun MetadataChip(
+    icon: Int,
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -185,50 +221,60 @@ fun CachePlaylistScreen(
                 if (filteredSongs.isNotEmpty() && !isSearching) {
                     item(key = "playlist_header") {
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier
-                                .padding(12.dp)
-                                .animateItem(),
+                                .fillMaxWidth()
+                                .padding(24.dp)
+                                .animateItem()
                         ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
+                            // Large centered album artwork with shadow
+                            Surface(
+                                modifier = Modifier
+                                    .size(240.dp)
+                                    .shadow(
+                                        elevation = 8.dp,
+                                        shape = RoundedCornerShape(16.dp),
+                                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                    ),
+                                shape = RoundedCornerShape(16.dp)
                             ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .size(AlbumThumbnailSize)
-                                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                                ) {
-                                    AsyncImage(
-                                        model = filteredSongs.first().item.thumbnailUrl,
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(ThumbnailCornerRadius)),
-                                    )
-                                }
-                                Column(
-                                    verticalArrangement = Arrangement.Center,
-                                ) {
-                                    Text(
-                                        stringResource(R.string.cached_playlist),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold
-                                    )
-
-                                    Text(
-                                        text = pluralStringResource(
-                                            id = R.plurals.n_song,
-                                            count = filteredSongs.size,
-                                            filteredSongs.size
-                                        ),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                }
+                                AsyncImage(
+                                    model = filteredSongs.first().item.thumbnailUrl,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
                             }
 
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            // Title and metadata
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    stringResource(R.string.cached_playlist),
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                // Metadata chip
+                                MetadataChip(
+                                    icon = R.drawable.queue_music,
+                                    text = pluralStringResource(
+                                        id = R.plurals.n_song,
+                                        count = filteredSongs.size,
+                                        filteredSongs.size
+                                    )
+                                )
+                            }
+
+                            // Main play/shuffle buttons
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                                 Button(
                                     onClick = {
                                         playerConnection.playQueue(
@@ -240,6 +286,7 @@ fun CachePlaylistScreen(
                                     },
                                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                                     modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(24.dp)
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.play),
@@ -262,6 +309,7 @@ fun CachePlaylistScreen(
                                     },
                                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                                     modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(24.dp)
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.shuffle),
